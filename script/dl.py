@@ -31,6 +31,7 @@ def build_body(date, idx="0", change="", sort_by="", search=""):
         "ctl00$PageContent$ctrlPrivilege$txtSearch": str(search),
     }
 
-response = requests.post(URI, headers=headers, data=build_body("01.05.2020"))
-csv = str(response.content, "cp1251")
-open("result.csv", "wt").write(csv)
+def download_csv(to_date):
+    response = requests.post(URI, headers=headers, data=build_body(to_date))
+    return str(response.content, "cp1251")
+

@@ -1,14 +1,13 @@
-import xml.dom.minidom
 import os
+import numpy as np
+import pandas as pd
+
 # Файл с Мосбиржы со списком облигаций в XML
-xml_file="res/bond_list.xml"
+csv_file="res/bond_list.csv"
 
 cwd = os.path.dirname(__file__)
-xml_file = os.path.join(cwd, os.pardir, xml_file)
-xml_file = os.path.normpath(xml_file)
+csv_file = os.path.join(cwd, os.pardir, csv_file)
+csv_file = os.path.normpath(csv_file)
 
-doc = xml.dom.minidom.parse(xml_file)
-rows = doc.getElementsByTagName("row")
-print (len(rows))
-for row in rows:
-    print (row.getAttribute("secid"), row.getAttribute("name"), row.getAttribute("issuedate"))
+base = pd.read_csv(csv_file, sep=';', encoding="cp1251" )
+print (base[['Код бумаги']][:10])

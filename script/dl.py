@@ -17,6 +17,8 @@ headers = {
     "referer": URI,
 }
 
+isin_uri = 'https://iss.moex.com/iss/securities/'
+
 def build_body(date, idx="0", change="", sort_by="", search=""):
     return {
         "__EVENTTARGET": "ctl00$PageContent$ctrlPrivilege$DownCSV",
@@ -34,4 +36,9 @@ def build_body(date, idx="0", change="", sort_by="", search=""):
 def download_csv(to_date):
     response = requests.post(URI, headers=headers, data=build_body(to_date))
     return str(response.content, "cp1251")
+
+def get_data(isin):
+    req_uri = isin_uri+isin+'.json'
+    r = requests.get(url=req_uri)
+    return r
 

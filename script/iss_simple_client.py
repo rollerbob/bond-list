@@ -63,7 +63,7 @@ class MicexAuth:
                 self.passport = cookie
                 break
         if self.passport is None:
-            print "Cookie not found!"
+            print ("Cookie not found!")
 
     def is_real_time(self):
         """ repeat auth request if failed last time or cookie expired

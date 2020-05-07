@@ -18,6 +18,7 @@ headers = {
 }
 
 isin_uri = 'https://iss.moex.com/iss/securities/'
+isin_uri_extended = 'https://iss.moex.com/iss/engines/stock/markets/bonds/securities/'
 
 def build_body(date, idx="0", change="", sort_by="", search=""):
     return {
@@ -39,6 +40,11 @@ def download_csv(to_date):
 
 def get_data(isin):
     req_uri = isin_uri+isin+'.json'
+    r = requests.get(url=req_uri)
+    return r
+
+def get_data_ext(isin):
+    req_uri = isin_uri_extended+isin+'.json'
     r = requests.get(url=req_uri)
     return r
 

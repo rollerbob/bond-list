@@ -1,9 +1,10 @@
 import os
 import numpy as np
 import pandas as pd
-import json
+from progress.bar import ChargingBar
 from dl import download_csv
 from dl import get_data
+from dl import get_data_ext
 
 def main():
     
@@ -20,7 +21,7 @@ def main():
         'Ном. доходность',
         'Доходность',
         'Кол-во платежей в год',
-        'Фиксиированный купон',
+        'Фиксированный купон',
         'Амортизация',
         'Дюрация'
     ])
@@ -34,14 +35,19 @@ def main():
     # На какую дату нужно проверить список
     to_date = "06.05.2020"
 
-    # Расположение файла
-    csv_file="res/bond_list.csv"
+    # Расположение файла со списком облигаций
+    csv_file = "res/bond_list.csv"
     csv_file = os.path.join(os.path.dirname(__file__), os.pardir, csv_file)
     csv_file = os.path.normpath(csv_file)
 
+    # Расположение файла с итоговым экселем
+    xlsx_file = "res/big_table.xlsx"
+    xlsx_file = os.path.join(os.path.dirname(__file__), os.pardir, xlsx_file)
+    xlsx_file = os.path.normpath(xlsx_file)
+
     # Проверяю есть ли сохранённый файл на диске в res/bond_list.csv
     # Если файла нет, то скачаем его
-    if (os.path.isfile(csv_file) == False):
+    if os.path.isfile(csv_file) == False:
         print ("Скачиваю список облигаций с сервера MOEX.")
         csv = download_csv(to_date)
         print ("Сохраняю список облигаций на диск.")
@@ -62,17 +68,12 @@ def main():
     # DataFrame bond_list больше не нужен
     del bond_list
 
-    # Создаю конфиг для аутентификации на сайте мосбиржи
-    # my_config = Config("gd.triebkraft@gmail.com", "32Go7bi")
-    
-    
-    
-
     # Формирую Series с кодами облигаций
     isins = df['Код облигации']
 
     # Заполняю остатки DataFrame используя запросы к бирже по коду облигации
     i = 0
+    bar = ChargingBar('Сбор данных с сайта MOEX', max=len(isins), suffix='%(percent).1f%% | Осталось -  %(eta_td)s ')
     
     for isin in isins:
         r = get_data(isin).json()
@@ -80,15 +81,34 @@ def main():
         for line in data:
             if line[0] == "LISTLEVEL":
                 df.loc[i, 'Уровень листинга'] = line[2]
-        print (i)
+
+            if line[0] == "MATDATE":
+                df.loc[i, 'Дата погашения'] = line [2]
+
+            if line[0] == "FACEVALUE":
+                df.loc[i, 'Номинал'] = line[2]
+
+            if line[0] == "COUPONFREQUENCY":
+                df.loc[i, 'Кол-во платежей в год'] = line[2]
+
+            if line[0] == "COUPONPERCENT":
+                df.loc[i, 'Ном. доходность'] = line[2]
+
+        r = get_data_ext(isin).json()
+        data = r.get('marketdata').get('data')
+        if data:
+            line = data[0]
+            df.loc[i, 'Стоимость'] = line[47]
+            df.loc[i, 'Доходность'] = line[16]
+            df.loc[i, 'Дюрация'] = line[36]
+
+        bar.next()
         i += 1
 
-    print (df.head())
+    bar.finish()
     
-    # for isin in isins:
-    #     df.loc[i, 'Отрасль'] = isin
-    #     i += 1
-        
+    # Сохраняю полученные данные в эксель
+    df.to_excel(xlsx_file)
 
 
 if __name__ == '__main__':

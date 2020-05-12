@@ -20,7 +20,8 @@ def main():
         'Стоимость',
         'Ном. доходность',
         'Доходность',
-        'Кол-во платежей в год',
+        'Нак. куп. доход',
+        'Период купона',
         'Фиксированный купон',
         'Амортизация',
         'Дюрация'
@@ -33,7 +34,7 @@ def main():
     # https://www.moex.com/ru/markets/stock/privilegeindividuals.aspx
 
     # На какую дату нужно проверить список
-    to_date = "06.05.2020"
+    to_date = "08.05.2020"
 
     # Расположение файла со списком облигаций
     csv_file = "res/bond_list.csv"
@@ -57,13 +58,11 @@ def main():
         csv = open(csv_file, "r")
 
     # создаю DataFrame с этими данными
-    bond_list = pd.read_csv(csv, sep=';', encoding="cp1251")
+    bond_list = pd.read_csv(csv_file, sep=';', encoding="cp1251")
 
     # перетаскиваю нужные мне данные в главный DataFrame
     df['Код облигации'] = bond_list['ISIN']
-    df['Наименование'] = bond_list['Наименование']
     df['Дата размещения'] = bond_list['Дата начала размещения']
-
 
     # DataFrame bond_list больше не нужен
     del bond_list
@@ -76,31 +75,31 @@ def main():
     bar = ChargingBar('Сбор данных с сайта MOEX', max=len(isins), suffix='%(percent).1f%% | Осталось -  %(eta_td)s ')
     
     for isin in isins:
-        r = get_data(isin).json()
-        data = r.get('description').get('data')
-        for line in data:
-            if line[0] == "LISTLEVEL":
-                df.loc[i, 'Уровень листинга'] = line[2]
-
-            if line[0] == "MATDATE":
-                df.loc[i, 'Дата погашения'] = line [2]
-
-            if line[0] == "FACEVALUE":
-                df.loc[i, 'Номинал'] = line[2]
-
-            if line[0] == "COUPONFREQUENCY":
-                df.loc[i, 'Кол-во платежей в год'] = line[2]
-
-            if line[0] == "COUPONPERCENT":
-                df.loc[i, 'Ном. доходность'] = line[2]
-
         r = get_data_ext(isin).json()
+        
+        columns = r.get('securities').get('columns')
+        data = r.get('securities').get('data')
+        
+        if columns and data:
+            data = data[0]
+            df.loc[i, 'Наименование'] = data [columns.index('SECNAME')]
+            df.loc[i, 'Дата погашения'] = data [columns.index('MATDATE')]
+            df.loc[i, 'Уровень листинга'] = data[columns.index('LISTLEVEL')]
+            df.loc[i, 'Номинал'] = data[columns.index('FACEVALUE')]
+            df.loc[i, 'Стоимость'] = data[columns.index('PREVWAPRICE')]
+            df.loc[i, 'Ном. доходность'] = data[columns.index('COUPONPERCENT')]
+            df.loc[i, 'Нак. куп. доход'] = data[columns.index('ACCRUEDINT')]
+            df.loc[i, 'Период купона'] = data[columns.index('COUPONPERIOD')]
+            # df.loc[i, 'Фиксированный купон'] = data[columns.index('')]
+            # df.loc[i, 'Амортизация'] = data[columns.index('')]
+
+        marketdata = r.get('marketdata').get('columns')
         data = r.get('marketdata').get('data')
-        if data:
-            line = data[0]
-            df.loc[i, 'Стоимость'] = line[47]
-            df.loc[i, 'Доходность'] = line[16]
-            df.loc[i, 'Дюрация'] = line[36]
+
+        if columns and data:
+            data = data[0]
+            df.loc[i, 'Доходность'] = data[marketdata.index('YIELD')]
+            df.loc[i, 'Дюрация'] = data[marketdata.index('DURATION')]
 
         bar.next()
         i += 1
@@ -109,6 +108,7 @@ def main():
     
     # Сохраняю полученные данные в эксель
     df.to_excel(xlsx_file)
+    print (df.head())
 
 
 if __name__ == '__main__':

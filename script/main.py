@@ -34,7 +34,7 @@ def main():
     # https://www.moex.com/ru/markets/stock/privilegeindividuals.aspx
 
     # На какую дату нужно проверить список
-    to_date = "08.05.2020"
+    to_date = "11.06.2020"
 
     # Расположение файла со списком облигаций
     csv_file = "res/bond_list.csv"

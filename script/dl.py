@@ -47,4 +47,3 @@ def get_data_ext(isin):
     req_uri = isin_uri_extended+isin+'.json'
     r = requests.get(url=req_uri)
     return r
-
